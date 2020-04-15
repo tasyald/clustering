@@ -1,22 +1,145 @@
 from sklearn.datasets import load_iris
 import math
 import random
+import copy
 
 
-def preprocessing():
-    makedendogram()
-    initdistancemetrics()   
+def euclideanDistance(array1, array2):
+    res = 0
+    for i in range(len(array1)):
+        res += (array2[i] - array1[i]) ** 2
+    return math.sqrt(res)
+
+def updateDendogram(dendogram, iteration, i_result, j_result):
+    print(iteration)
+    for i in range(0,len(dendogram)-iteration+1):
+        if i < j_result:
+            if i == i_result:
+                dendogram[iteration][i_result] = copy.deepcopy(dendogram[iteration-1][i])
+                dendogram[iteration][i_result].append(copy.deepcopy(dendogram[iteration-1][j_result]))
+            else:
+                dendogram[iteration][i]= copy.deepcopy(dendogram[iteration-1][i]) 
+        elif i != j_result :
+            dendogram[iteration][i-1] = copy.deepcopy(dendogram[iteration-1][i])
     pass
 
-def agglomerative():
-    preprocessing()
+def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
+    if i == i_result:
+        if single:
+            if distanceMetrics[j][i_result] <= distanceMetrics[j][j_result] :
+                return copy.deepcopy(distanceMetrics[j][i_result])
+            else:
+                return copy.deepcopy(distanceMetrics[j][j_result])
+        else:
+            if distanceMetrics[j][i_result] >= distanceMetrics[j][j_result] :
+                return copy.deepcopy(distanceMetrics[j][i_result])
+            else:
+                return copy.deepcopy(distanceMetrics[j][j_result])
+    else:
+        if single:
+            if distanceMetrics[i][i_result] <= distanceMetrics[i][j_result] :
+                return copy.deepcopy(distanceMetrics[i][i_result])
+            else:
+                return copy.deepcopy(distanceMetrics[i][j_result])
+        else:
+            if distanceMetrics[i][i_result] >= distanceMetrics[i][j_result] :
+                return copy.deepcopy(distanceMetrics[i][i_result])
+            else:
+                return copy.deepcopy(distanceMetrics[i][j_result])
+    return -1
+
+def updateDistanceMetrics(distanceMetrics, i_result, j_result ):
+    
+    # single linkage and complete linkage only
+    new_distanceMetrics = []
+    jumlah_data = len(distanceMetrics)
+    
+    # make empty
+    for i in range(0,jumlah_data-1):
+        new_distanceMetrics.append([])
+        for j in range(0, jumlah_data-1):
+            new_distanceMetrics[i].append(0)
+    
+    for i in range(0,jumlah_data-1):
+        for j in range(i+1, jumlah_data-1):
+            if i == i_result or j == i_result:
+                # single or complete linkage
+                new_distanceMetrics[i][j] = singleCompleteReplace(False,distanceMetrics,i_result,j_result,i,j)
+            else :
+                # shift or copy element
+                if j < j_result:
+                    new_distanceMetrics[i][j] = distanceMetrics[i][j]
+                elif j >= j_result:
+                    new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
+            new_distanceMetrics[j][i] = copy.deepcopy(new_distanceMetrics[i][j])
+    return new_distanceMetrics
+
+def preprocessing(dendogram, distanceMetrics, data):
+    jumlah_data = len(data)
+    
+    # make empty data
+    for i in range(0,jumlah_data):
+        dendogram.append(dict())
+        distanceMetrics.append([])
+        for j in range(0, jumlah_data):
+            distanceMetrics[i].append(0)
+    
+    # initiate distanceMetrics
+    for i in range(0,jumlah_data):
+        for j in range(i+1, jumlah_data):
+            distanceMetrics[i][j] = euclideanDistance(data[i], data[j])
+            distanceMetrics[j][i] = copy.deepcopy(distanceMetrics[i][j])
+    
+    #initiate dendogram
+    for i in range(0, jumlah_data):
+        for j in range(0,jumlah_data-i):
+            if (i == 0):
+                dendogram[i][j] = [j]
+            else:
+                dendogram[i][j] = []
+    pass
+
+def searchMinDist(distanceMetrics):
+    minimum = 9999999
+    i_result = -1
+    j_result = -1
+    for i in range(0,len(distanceMetrics)):
+        for j in range(i+1,len(distanceMetrics)):
+            if distanceMetrics[i][j]< minimum:
+                minimum = distanceMetrics[i][j]
+                i_result = i
+                j_result = j
+    return i_result, j_result
+
+def agglomerative(data):
+    dendogram = []
+    distanceMetrics = []
+    preprocessing(dendogram, distanceMetrics, data)
+    
     # Main Agglomerative iteration n-1
-    searchMinDist()
-    updateDendogram()
-    updateDistanceMetrics()
+    for iteration in range(1,len(data)):
+        # print(distanceMetrics)
+        # print("=======================")
+        i, j = searchMinDist(distanceMetrics)
+        if i==-1 or j == -1 :
+            print("internal error searchMinDist")
+            break
+        # if iteration ==2 :
+        #     break
+        # print(i)
+        # print(j)
+        updateDendogram(dendogram, iteration, i, j )
+        distanceMetrics = updateDistanceMetrics(distanceMetrics,i, j)
+    for row in range(0,len(dendogram)):
+        print("========================")
+        print(dendogram[row])
     pass 
 
 def main():
+    iris = load_iris()
+    print(iris.data)
+    data = [[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4]]
+    agglomerative(iris.data)
     pass
 
 if __name__ == "__main__":
