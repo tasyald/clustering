@@ -30,8 +30,8 @@ def means(data, cluster):
                     sum[k][x] += data[i][x]
                 count[k] += 1
     avg = [[sum[0][0] / count[0], sum[0][1] / count[0], sum[0][2] / count[0], sum[0][3] / count[0]],
-          [sum[1][0] / count[1], sum[1][1] / count[0], sum[1][2] / count[1], sum[1][3] / count[1]],
-          [sum[2][0] / count[2], sum[2][1] / count[0], sum[2][2] / count[2], sum[2][3] / count[2]]]
+          [sum[1][0] / count[1], sum[1][1] / count[1], sum[1][2] / count[1], sum[1][3] / count[1]],
+          [sum[2][0] / count[2], sum[2][1] / count[2], sum[2][2] / count[2], sum[2][3] / count[2]]]
     return avg
 
 def stopIter(error, epoch):
@@ -41,17 +41,17 @@ def stopIter(error, epoch):
 
 def kMeans(data):
     # Initialize centroid
-    c1, c2, c3 = random.sample(range(0, len(data)), 3)
+    c1, c2, c3 = random.sample(range(0, len(data) - 1), 3)
     centroid = data[c1], data[c2], data[c3]
 
-    cluster = []
+    cluster = [-1] * len(data)
 
     error = (99999, 99999, 99999)
     epoch = 0
 
     while not stopIter(error, epoch):
-        for d in data:
-            cluster.append(assignCluster(centroid, d))
+        for i in range(len(data)):
+            cluster[i] = assignCluster(centroid, data[i])
 
         c = means(data, cluster)
 
