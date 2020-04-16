@@ -1,4 +1,5 @@
 from sklearn.datasets import load_iris
+from sklearn.cluster import AgglomerativeClustering
 import math
 import random
 import copy
@@ -26,16 +27,23 @@ def updateDendogram(dendogram, iteration, i_result, j_result):
 def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
     if i == i_result:
         if single:
-            if distanceMetrics[j][i_result] <= distanceMetrics[j][j_result] :
-                return copy.deepcopy(distanceMetrics[j][i_result])
+            if j < j_result:
+                if distanceMetrics[j][i_result] <= distanceMetrics[j][j_result] :
+                    return copy.deepcopy(distanceMetrics[j][i_result])
+                else:
+                    return copy.deepcopy(distanceMetrics[j][j_result])
             else:
-                return copy.deepcopy(distanceMetrics[j][j_result])
+                if distanceMetrics[j+1][i_result] <= distanceMetrics[j+1][j_result] :
+                    return copy.deepcopy(distanceMetrics[j+1][i_result])
+                else:
+                    return copy.deepcopy(distanceMetrics[j+1][j_result])
         else:
             if distanceMetrics[j][i_result] >= distanceMetrics[j][j_result] :
                 return copy.deepcopy(distanceMetrics[j][i_result])
             else:
                 return copy.deepcopy(distanceMetrics[j][j_result])
     else:
+        print("anjingk")
         if single:
             if distanceMetrics[i][i_result] <= distanceMetrics[i][j_result] :
                 return copy.deepcopy(distanceMetrics[i][i_result])
@@ -69,8 +77,11 @@ def updateDistanceMetrics(distanceMetrics, i_result, j_result ):
                 # shift or copy element
                 if j < j_result:
                     new_distanceMetrics[i][j] = distanceMetrics[i][j]
-                elif j >= j_result:
-                    new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
+                else:
+                    if i < j_result:
+                        new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
+                    else:
+                        new_distanceMetrics[i][j] = distanceMetrics[i+1][j+1] 
             new_distanceMetrics[j][i] = copy.deepcopy(new_distanceMetrics[i][j])
     return new_distanceMetrics
 
@@ -105,7 +116,7 @@ def searchMinDist(distanceMetrics):
     j_result = -1
     for i in range(0,len(distanceMetrics)):
         for j in range(i+1,len(distanceMetrics)):
-            if distanceMetrics[i][j]< minimum:
+            if distanceMetrics[i][j] < minimum:
                 minimum = distanceMetrics[i][j]
                 i_result = i
                 j_result = j
@@ -133,13 +144,21 @@ def agglomerative(data):
     for row in range(0,len(dendogram)):
         print("========================")
         print(dendogram[row])
+    print(len(dendogram[150-3][0]))
+    print(len(dendogram[150-3][1]))
+    print(len(dendogram[150-3][2]))
     pass 
 
 def main():
     iris = load_iris()
     print(iris.data)
-    data = [[5.1,3.5,1.4,0.2],[4.9,3.0,1.4,0.2],[4.7,3.2,1.3,0.2],[4.6,3.1,1.5,0.2],[5.0,3.6,1.4,0.2],[5.4,3.9,1.7,0.4]]
-    agglomerative(iris.data)
+    data = iris.data
+    agglomerative(data)
+    
+    clustering = AgglomerativeClustering(n_clusters=3, linkage="complete").fit(data)
+    print(clustering)
+
+    print(clustering.labels_)
     pass
 
 if __name__ == "__main__":
