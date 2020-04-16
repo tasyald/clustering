@@ -4,6 +4,7 @@ import math
 import random
 import pandas as pd
 import numpy as np
+from sklearn.metrics.cluster import *
 
 MAX_ITER = 1000
 THRESHOLD = 0.00001
@@ -53,15 +54,24 @@ def kMeans(data):
 
         centroid = c
         epoch += 1
-    
-    print(cluster)
-    print(centroid)
+    return cluster
+
+def fowlkesMallows(target, prediction):
+    return fowlkes_mallows_score(target, prediction)
+
+def silhuoette(data, prediction):
+    return silhouette_score(data, prediction, sample_size=150)
 
 def main():
     # Read iris dataset
     iris = load_iris()
     data = iris.data
-    kMeans(data)
+    pred = kMeans(data)
+    fm = fowlkesMallows(iris.target, pred)
+    sc = silhuoette(data, pred)
+    print("Prediction:", pred)
+    print("Folkes-Mallows Score:", fm)
+    print("Silhouette Coefficient:", sc)
 
 if __name__ == "__main__":
     main()
