@@ -2,6 +2,8 @@
 from sklearn.datasets import load_iris
 import math
 import random
+import pandas as pd
+import numpy as np
 
 MAX_ITER = 1000
 THRESHOLD = 0.00001
@@ -20,18 +22,9 @@ def assignCluster(centroid, instance):
 
 def means(data, cluster):
 # Count mean in the clusters
-    sum = [[0] * 4] * 3
-    count = [0] * 3
-    
-    for i in range(len(cluster)):
-        for k in range(3):
-            if (cluster[i] == k):
-                for x in range(4):
-                    sum[k][x] += data[i][x]
-                count[k] += 1
-    avg = [[sum[0][0] / count[0], sum[0][1] / count[0], sum[0][2] / count[0], sum[0][3] / count[0]],
-          [sum[1][0] / count[1], sum[1][1] / count[1], sum[1][2] / count[1], sum[1][3] / count[1]],
-          [sum[2][0] / count[2], sum[2][1] / count[2], sum[2][2] / count[2], sum[2][3] / count[2]]]
+    df = pd.DataFrame(pd.np.column_stack([data, cluster]))
+    avg = df.groupby(4).mean()
+    avg = avg.values.tolist()
     return avg
 
 def stopIter(error, epoch):
