@@ -34,29 +34,36 @@ def means(data, cluster):
           [sum[2][0] / count[2], sum[2][1] / count[0], sum[2][2] / count[2], sum[2][3] / count[2]]]
     return avg
 
+def stopIter(error, epoch):
+    totalErr = (error[0] + error[1] + error[2])/3
+
+    return ((totalErr <= THRESHOLD) or (epoch >= MAX_ITER))
+
 def kMeans(data):
-    epoch = 0
     # Initialize centroid
     c1, c2, c3 = random.sample(range(0, len(data)), 3)
     centroid = data[c1], data[c2], data[c3]
-    print(centroid)
 
     cluster = []
 
-    # Start iteration
+    error = (99999, 99999, 99999)
+    epoch = 0
+
+    while not stopIter(error, epoch):
+        for d in data:
+            cluster.append(assignCluster(centroid, d))
+
+        c = means(data, cluster)
+
+        # Error (distance between old and new centroid)
+        error = distance(centroid[0], c[0]), distance(centroid[1], c[1]), distance(centroid[2], c[2])
+
+        centroid = c
+        epoch += 1
     
-    
-    for d in data:
-        cluster.append(assignCluster(centroid, d))
     print(cluster)
+    print(centroid)
 
-    c = means(data, cluster)
-    print(c)
-
-    # Error (distance between old and new centroid)
-    e = distance(centroid[0], c[0]), distance(centroid[1], c[1]), distance(centroid[2], c[2])
-    print(e)
-    
 def main():
     # Read iris dataset
     iris = load_iris()
