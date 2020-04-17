@@ -62,6 +62,46 @@ def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
                 return copy.deepcopy(distanceMetrics[i][j_result])
     return -1
 
+def updateDistanceMetricsAverage(distanceMetrics, i_result, j_result):
+#Update distance matrix average linkage
+    new_distanceMetrics = []
+    jumlah_data = len(distanceMetrics)
+
+    # make empty
+    for i in range(0,jumlah_data-1):
+        new_distanceMetrics.append([])
+        for j in range(0, jumlah_data-1):
+            new_distanceMetrics[i].append(0)
+    
+    for i in range(0,jumlah_data-1):
+        for j in range(i+1, jumlah_data-1):
+            if i == i_result or j == i_result:
+                # average linkage
+                new_distanceMetrics[i][j] = averageReplace(distanceMetrics,i_result,j_result,i,j)
+            else :
+                # shift or copy element
+                if j < j_result:
+                    new_distanceMetrics[i][j] = distanceMetrics[i][j]
+                else:
+                    if i < j_result:
+                        new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
+                    else:
+                        new_distanceMetrics[i][j] = distanceMetrics[i+1][j+1] 
+            new_distanceMetrics[j][i] = copy.deepcopy(new_distanceMetrics[i][j])
+    return new_distanceMetrics
+
+def averageReplace(distanceMetrics, i_result, j_result, i, j ):
+    if i == i_result:
+        if j < j_result:
+            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
+        else:
+            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
+
+    else:
+        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
+    
+    return -1
+
 def updateDistanceMetrics(distanceMetrics, i_result, j_result ):
     
     # single linkage and complete linkage only
@@ -146,10 +186,12 @@ def agglomerative(data):
         # print(i)
         # print(j)
         updateDendogram(dendogram, iteration, i, j )
-        distanceMetrics = updateDistanceMetrics(distanceMetrics,i, j)
-    for row in range(0,len(dendogram)):
-        print("========================")
-        print(dendogram[row])
+        distanceMetrics = updateDistanceMetricsAverage(distanceMetrics,i, j)
+    # for row in range(0,len(dendogram)):
+    #     print("========================")
+    #     print(dendogram[row])
+    print("========================")
+    print(dendogram[len(dendogram) - 3])    
     print(len(dendogram[150-3][0]))
     print(len(dendogram[150-3][1]))
     print(len(dendogram[150-3][2]))
@@ -161,7 +203,7 @@ def main():
     data = iris.data
     agglomerative(data)
     
-    clustering = AgglomerativeClustering(n_clusters=3, linkage="complete").fit(data)
+    clustering = AgglomerativeClustering(n_clusters=3, linkage="average").fit(data)
     print(clustering)
 
     print(clustering.labels_)
