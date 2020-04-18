@@ -5,6 +5,8 @@ import random
 import pandas as pd
 import numpy as np
 from sklearn.metrics.cluster import *
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 MAX_ITER = 1000
 THRESHOLD = 0.00001
@@ -23,7 +25,7 @@ def assignCluster(centroid, instance):
 
 def means(data, cluster):
 # Count mean in the clusters
-    df = pd.DataFrame(pd.np.column_stack([data, cluster]))
+    df = pd.DataFrame(np.column_stack([data, cluster]))
     avg = df.groupby(4).mean()
     avg = avg.values.tolist()
     return avg
@@ -72,6 +74,13 @@ def main():
     print("Prediction:", pred)
     print("Folkes-Mallows Score:", fm)
     print("Silhouette Coefficient:", sc)
+
+    sns.set(style="white", color_codes=True)
+    dfIris = pd.DataFrame(data= np.c_[data, pred],
+                     columns= iris['feature_names'] + ['Clusters'])
+    g = sns.pairplot(dfIris, hue='Clusters')
+
+    plt.show()
 
 if __name__ == "__main__":
     main()
