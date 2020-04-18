@@ -2,6 +2,9 @@
 from sklearn.datasets import load_iris
 import math
 import random
+import pandas as pd
+import numpy as np
+from sklearn.metrics.cluster import *
 
 MAX_ITER = 1000
 THRESHOLD = 0.00001
@@ -20,48 +23,55 @@ def assignCluster(centroid, instance):
 
 def means(data, cluster):
 # Count mean in the clusters
-    sum = [[0] * 4] * 3
-    count = [0] * 3
-    
-    for i in range(len(cluster)):
-        for k in range(3):
-            if (cluster[i] == k):
-                for x in range(4):
-                    sum[k][x] += data[i][x]
-                count[k] += 1
-    avg = [[sum[0][0] / count[0], sum[0][1] / count[0], sum[0][2] / count[0], sum[0][3] / count[0]],
-          [sum[1][0] / count[1], sum[1][1] / count[0], sum[1][2] / count[1], sum[1][3] / count[1]],
-          [sum[2][0] / count[2], sum[2][1] / count[0], sum[2][2] / count[2], sum[2][3] / count[2]]]
+    df = pd.DataFrame(pd.np.column_stack([data, cluster]))
+    avg = df.groupby(4).mean()
+    avg = avg.values.tolist()
     return avg
 
+def stopIter(error, epoch):
+    totalErr = (error[0] + error[1] + error[2])/3
+
+    return ((totalErr <= THRESHOLD) or (epoch >= MAX_ITER))
+
 def kMeans(data):
-    epoch = 0
     # Initialize centroid
-    c1, c2, c3 = random.sample(range(0, len(data)), 3)
+    c1, c2, c3 = random.sample(range(0, len(data) - 1), 3)
     centroid = data[c1], data[c2], data[c3]
-    print(centroid)
 
-    cluster = []
+    cluster = [-1] * len(data)
 
-    # Start iteration
-    
-    
-    for d in data:
-        cluster.append(assignCluster(centroid, d))
-    print(cluster)
+    error = (99999, 99999, 99999)
+    epoch = 0
 
-    c = means(data, cluster)
-    print(c)
+    while not stopIter(error, epoch):
+        for i in range(len(data)):
+            cluster[i] = assignCluster(centroid, data[i])
 
-    # Error (distance between old and new centroid)
-    e = distance(centroid[0], c[0]), distance(centroid[1], c[1]), distance(centroid[2], c[2])
-    print(e)
-    
+        c = means(data, cluster)
+
+        # Error (distance between old and new centroid)
+        error = distance(centroid[0], c[0]), distance(centroid[1], c[1]), distance(centroid[2], c[2])
+
+        centroid = c
+        epoch += 1
+    return cluster
+
+def fowlkesMallows(target, prediction):
+    return fowlkes_mallows_score(target, prediction)
+
+def silhuoette(data, prediction):
+    return silhouette_score(data, prediction, sample_size=150)
+
 def main():
     # Read iris dataset
     iris = load_iris()
     data = iris.data
-    kMeans(data)
+    pred = kMeans(data)
+    fm = fowlkesMallows(iris.target, pred)
+    sc = silhuoette(data, pred)
+    print("Prediction:", pred)
+    print("Folkes-Mallows Score:", fm)
+    print("Silhouette Coefficient:", sc)
 
 if __name__ == "__main__":
     main()
