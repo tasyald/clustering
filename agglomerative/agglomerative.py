@@ -48,7 +48,6 @@ def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
                     return copy.deepcopy(distanceMetrics[j+1][i_result])
                 else:
                     return copy.deepcopy(distanceMetrics[j+1][j_result])
-
     else:
         if single:
             if distanceMetrics[i][i_result] <= distanceMetrics[i][j_result] :
