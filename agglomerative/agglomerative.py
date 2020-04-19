@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 import math
 import random
 import copy
+import numpy as np
 
+COMPLETE_LINKAGE = 0
+SINGLE_LINKAGE = 1
+AVERAGE_LINKAGE = 2
+AVERAGE_GROUP_LINKAGE = 3
+DATA = 0
+INDEX = 1
 
 def euclideanDistance(array1, array2):
     res = 0
@@ -26,6 +33,70 @@ def updateDendogram(dendogram, iteration, i_result, j_result):
             dendogram[iteration][i-1] = copy.deepcopy(dendogram[iteration-1][i])
     pass
 
+def stripCluster (dendogram, data, clusterResult, mode):
+    if not(isinstance(dendogram, list)):
+        if mode == DATA:
+            clusterResult.append(data[dendogram])
+        elif mode == INDEX: 
+            clusterResult.append(dendogram)
+    else:
+        for items in dendogram:
+            stripCluster(items, data,  clusterResult, mode)
+
+def averageGroupReplace(distanceMetrics, i_result, j_result, i, j):
+    clusterA = stripCluster(dendogram)
+    if i == i_result:
+        if j < j_result:
+            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
+        else:
+            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
+    else:
+        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
+    return -1
+
+
+def updateDistanceMetricsAverage(distanceMetrics, i_result, j_result, data, dendogram, iteration):
+#Update distance matrix average linkage
+    new_distanceMetrics = []
+    jumlah_data = len(distanceMetrics)
+
+    # make empty
+    for i in range(0,jumlah_data-1):
+        new_distanceMetrics.append([])
+        for j in range(0, jumlah_data-1):
+            new_distanceMetrics[i].append(0)
+    
+    for i in range(0,jumlah_data-1):
+        for j in range(i+1, jumlah_data-1):
+            if i == i_result or j == i_result:
+                # average group linkage
+                clusterA = []
+                clusterB = []
+                stripCluster(dendogram[iteration][i], data, clusterA, DATA)
+                stripCluster(dendogram[iteration][j], data, clusterB, DATA)
+                new_distanceMetrics[i][j] = euclideanDistance(np.mean(clusterA, axis= 0), np.mean(clusterB, axis = 0))
+            else :
+                # shift or copy element
+                if j < j_result:
+                    new_distanceMetrics[i][j] = distanceMetrics[i][j]
+                else:
+                    if i < j_result:
+                        new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
+                    else:
+                        new_distanceMetrics[i][j] = distanceMetrics[i+1][j+1] 
+            new_distanceMetrics[j][i] = copy.deepcopy(new_distanceMetrics[i][j])
+    return new_distanceMetrics
+
+def averageReplace(distanceMetrics, i_result, j_result, i, j ):
+    if i == i_result:
+        if j < j_result:
+            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
+        else:
+            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
+    else:
+        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
+    return -1
+
 def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
     if i == i_result:
         if single:
@@ -33,6 +104,7 @@ def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
                 if distanceMetrics[j][i_result] <= distanceMetrics[j][j_result] :
                     return copy.deepcopy(distanceMetrics[j][i_result])
                 else:
+
                     return copy.deepcopy(distanceMetrics[j][j_result])
             else:
                 if distanceMetrics[j+1][i_result] <= distanceMetrics[j+1][j_result] :
@@ -63,72 +135,7 @@ def singleCompleteReplace(single, distanceMetrics, i_result, j_result, i, j ):
                 return copy.deepcopy(distanceMetrics[i][j_result])
     return -1
 
-def stripCluster (dendogram, data, clusterResult):
-    if not(isinstance(dendogram, list)):
-        clusterResult.append(data[dendogram])
-    else:
-        for items in dendogram:
-            stripCluster(dendogram, data, index, clusterResult)
-
-def updateDistanceMetricsAverage(distanceMetrics, i_result, j_result, data, dendogram, iteration):
-#Update distance matrix average linkage
-    new_distanceMetrics = []
-    jumlah_data = len(distanceMetrics)
-
-    # make empty
-    for i in range(0,jumlah_data-1):
-        new_distanceMetrics.append([])
-        for j in range(0, jumlah_data-1):
-            new_distanceMetrics[i].append(0)
-    
-    for i in range(0,jumlah_data-1):
-        for j in range(i+1, jumlah_data-1):
-            if i == i_result or j == i_result:
-                # average linkage
-                # new_distanceMetrics[i][j] = averageReplace(distanceMetrics,i_result,j_result,i,j)
-                # average group linkage
-                clusterA = np.array()
-                clusterB = np.array()
-                clusterA = stripCluster(dendogram[iteration][i], data, clusterA)
-                clusterB = stripCluster(dendogram[iteration][j], data, clusterB)
-                new_distanceMetrics[i][j] = euclideanDistance(np.mean(clusterA, axis= 0), np.mean(clusterB, axis = 0))
-                    
-            else :
-                # shift or copy element
-                if j < j_result:
-                    new_distanceMetrics[i][j] = distanceMetrics[i][j]
-                else:
-                    if i < j_result:
-                        new_distanceMetrics[i][j] = distanceMetrics[i][j+1]
-                    else:
-                        new_distanceMetrics[i][j] = distanceMetrics[i+1][j+1] 
-            new_distanceMetrics[j][i] = copy.deepcopy(new_distanceMetrics[i][j])
-    return new_distanceMetrics
-
-def averageReplace(distanceMetrics, i_result, j_result, i, j ):
-    if i == i_result:
-        if j < j_result:
-            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
-        else:
-            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
-    else:
-        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
-    return -1
-
-
-
-def averageGroupReplace(distanceMetrics, i_result, j_result, i, j):
-    clusterA = stripCluster(dendogram)
-    if i == i_result:
-        if j < j_result:
-            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
-        else:
-            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
-    else:
-        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
-    return -1
-
-def updateDistanceMetrics(distanceMetrics, i_result, j_result ):
+def updateDistanceMetrics(distanceMetrics, i_result, j_result, mode ):
     
     # single linkage and complete linkage only
     new_distanceMetrics = []
@@ -144,7 +151,12 @@ def updateDistanceMetrics(distanceMetrics, i_result, j_result ):
         for j in range(i+1, jumlah_data-1):
             if i == i_result or j == i_result:
                 # single or complete linkage
-                new_distanceMetrics[i][j] = singleCompleteReplace(False,distanceMetrics,i_result,j_result,i,j)
+                if mode == SINGLE_LINKAGE:
+                    new_distanceMetrics[i][j] = singleCompleteReplace(True,distanceMetrics,i_result,j_result,i,j)
+                elif mode == COMPLETE_LINKAGE:
+                    new_distanceMetrics[i][j] = singleCompleteReplace(False,distanceMetrics,i_result,j_result,i,j)
+                elif mode == AVERAGE_LINKAGE:
+                    new_distanceMetrics[i][j] = averageReplace(distanceMetrics,i_result,j_result,i,j)
             else :
                 # shift or copy element
                 if j < j_result:
@@ -194,7 +206,26 @@ def searchMinDist(distanceMetrics):
                 j_result = j
     return i_result, j_result
 
-def agglomerative(data):
+def buildResult(dendogram, n_cluster, data):
+    clusters = []
+    for cluster in dendogram[len(dendogram)-n_cluster]:
+        temp_cluster = []
+        print(cluster)
+        stripCluster(dendogram[len(dendogram)-n_cluster][cluster] , data, temp_cluster, INDEX)
+        clusters.append(copy.deepcopy(temp_cluster))
+    
+    # make empty result
+    label_result = []
+    for i in range(0,len(data)):
+        label_result.append(-1)
+    cluster_id = 0
+    for cluster in clusters:
+        for index in cluster:
+            label_result[index] = cluster_id
+        cluster_id += 1 
+    return label_result
+
+def agglomerative(data, mode, n_cluster):
     dendogram = []
     distanceMetrics = []
     preprocessing(dendogram, distanceMetrics, data)
@@ -212,22 +243,24 @@ def agglomerative(data):
         # print(i)
         # print(j)
         updateDendogram(dendogram, iteration, i, j )
-        distanceMetrics = updateDistanceMetricsAverage(distanceMetrics,i, j, data)
+        if mode == SINGLE_LINKAGE or mode == AVERAGE_LINKAGE or mode == COMPLETE_LINKAGE:
+            distanceMetrics = updateDistanceMetrics(distanceMetrics, i, j, mode)
+        elif mode == AVERAGE_GROUP_LINKAGE:
+            distanceMetrics = updateDistanceMetricsAverage(distanceMetrics,i, j, data, dendogram, iteration)
     # for row in range(0,len(dendogram)):
     #     print("========================")
     #     print(dendogram[row])
     print("========================")
-    print(dendogram[len(dendogram) - 3])    
-    print(len(dendogram[150-3][0]))
-    print(len(dendogram[150-3][1]))
-    print(len(dendogram[150-3][2]))
+    print(dendogram[len(dendogram) - 3])
+    return buildResult(dendogram, n_cluster, data)
     pass 
 
 def main():
     iris = load_iris()
-    print(iris.data[:, :2])
-    data = iris.data[:10]
-    agglomerative(data)
+    data = iris.data
+    print(data)
+    prediction = agglomerative(data, AVERAGE_GROUP_LINKAGE, 3)
+    print(prediction)
     
     clustering = AgglomerativeClustering(n_clusters=3, linkage="average").fit(data)
     print(clustering)
@@ -235,7 +268,7 @@ def main():
     # visualization
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    img = ax.scatter(iris.data[:, 0], iris.data[:, 1],iris.data[:, 2] , c=clustering.labels_, cmap=plt.hot())
+    img = ax.scatter(iris.data[:, 0], iris.data[:, 1],iris.data[:, 2] , c=prediction, cmap=plt.hot())
     fig.colorbar(img)
     plt.show()
     print(clustering.labels_)
