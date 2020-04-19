@@ -1,5 +1,6 @@
 from sklearn.datasets import load_iris
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics.cluster import *
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import math
@@ -21,7 +22,7 @@ def euclideanDistance(array1, array2):
     return math.sqrt(res)
 
 def updateDendogram(dendogram, iteration, i_result, j_result):
-    print(iteration)
+    # print(iteration)
     for i in range(0,len(dendogram)-iteration+1):
         if i < j_result:
             if i == i_result:
@@ -42,18 +43,6 @@ def stripCluster (dendogram, data, clusterResult, mode):
     else:
         for items in dendogram:
             stripCluster(items, data,  clusterResult, mode)
-
-def averageGroupReplace(distanceMetrics, i_result, j_result, i, j):
-    clusterA = stripCluster(dendogram)
-    if i == i_result:
-        if j < j_result:
-            return (distanceMetrics[j][i_result] + distanceMetrics[j][j_result]) / 2
-        else:
-            return (distanceMetrics[j+1][i_result] + distanceMetrics[j+1][j_result]) /2
-    else:
-        return (distanceMetrics[i][i_result] + distanceMetrics[i][j_result]) / 2
-    return -1
-
 
 def updateDistanceMetricsAverage(distanceMetrics, i_result, j_result, data, dendogram, iteration):
 #Update distance matrix average linkage
@@ -210,7 +199,7 @@ def buildResult(dendogram, n_cluster, data):
     clusters = []
     for cluster in dendogram[len(dendogram)-n_cluster]:
         temp_cluster = []
-        print(cluster)
+        # print(cluster)
         stripCluster(dendogram[len(dendogram)-n_cluster][cluster] , data, temp_cluster, INDEX)
         clusters.append(copy.deepcopy(temp_cluster))
     
@@ -246,24 +235,31 @@ def agglomerative(data, mode, n_cluster):
         if mode == SINGLE_LINKAGE or mode == AVERAGE_LINKAGE or mode == COMPLETE_LINKAGE:
             distanceMetrics = updateDistanceMetrics(distanceMetrics, i, j, mode)
         elif mode == AVERAGE_GROUP_LINKAGE:
+            # print("babi")
             distanceMetrics = updateDistanceMetricsAverage(distanceMetrics,i, j, data, dendogram, iteration)
     # for row in range(0,len(dendogram)):
     #     print("========================")
     #     print(dendogram[row])
-    print("========================")
-    print(dendogram[len(dendogram) - 3])
-    return buildResult(dendogram, n_cluster, data)
-    pass 
+    # print("========================")
+    # print(dendogram[len(dendogram) - 3])
+    return buildResult(dendogram, n_cluster, data) 
+
+def fowlkesMallows(target, prediction):
+    return fowlkes_mallows_score(target, prediction)
+
+def silhuoette(data, prediction):
+    return silhouette_score(data, prediction, sample_size=150)
 
 def main():
     iris = load_iris()
     data = iris.data
     print(data)
     prediction = agglomerative(data, AVERAGE_GROUP_LINKAGE, 3)
-    print(prediction)
-    
-    clustering = AgglomerativeClustering(n_clusters=3, linkage="average").fit(data)
-    print(clustering)
+    fm = fowlkesMallows(iris.target, prediction)
+    sc = silhuoette(data, prediction)
+    print("Prediction:", prediction)
+    print("Folkes-Mallows Score:", fm)
+    print("Silhouette Coefficient:", sc)
 
     # visualization
     fig = plt.figure()
@@ -271,8 +267,6 @@ def main():
     img = ax.scatter(iris.data[:, 0], iris.data[:, 1],iris.data[:, 2] , c=prediction, cmap=plt.hot())
     fig.colorbar(img)
     plt.show()
-    print(clustering.labels_)
-
     pass
 
 if __name__ == "__main__":
